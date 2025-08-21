@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Blocked by BrowseMind</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
+        background: #f8fafc;
+        color: #0f172a;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 12px;
+      }
+      .btn {
+        padding: 8px 12px;
+        border: 1px solid #0f172a;
+        border-radius: 10px;
+        background: #fff;
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: #0f172a;
+        color: #fff;
+      }
+      .muted {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+    </style>
+    <script>
+      let host =
+        new URLSearchParams(location.search).get("host") || "example.com";
+      window.addEventListener("DOMContentLoaded", () => {
+        document.getElementById("host").textContent = host;
+        document.getElementById("back").onclick = () =>
+          history.length > 1 ? history.back() : window.close();
+        document.getElementById("allow").onclick = async () => {
+          const until = Date.now() + 5 * 60 * 1000;
+          const entry = { host, until };
+          const { tempAllow = [] } = await chrome.storage.local.get([
+            "tempAllow",
+          ]);
+          tempAllow.push(entry);
+          await chrome.storage.local.set({ tempAllow });
+          location.href = `https://${host}`;
+        };
+        document.getElementById("manage").onclick = () =>
+          chrome.runtime.openOptionsPage();
+      });
+    </script>
+  </head>
+  <body>
+    <div class="card">
+      <div style="font-size: 28px; margin-bottom: 6px">🚫 Site Blocked</div>
+      <div id="host" class="muted" style="font-size: 14px"></div>
+      <div class="row">
+        <button id="back" class="btn">Go back</button>
+        <button id="allow" class="btn primary">Allow 5 min</button>
+      </div>
+      <div class="row">
+        <button id="manage" class="btn">Manage rules</button>
+      </div>
+      <div class="muted">You configured this in Blocklist.</div>
+    </div>
+  </body>
+</html>

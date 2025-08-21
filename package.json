@@ -1,0 +1,12 @@
+{
+  "name": "browsemind",
+  "private": true,
+  "workspaces": [
+    "extension",
+    "backend"
+  ],
+  "scripts": {
+    "dev:extension": "cd extension && npm run dev",
+    "dev:backend": "cd backend && npm run dev"
+  }
+}

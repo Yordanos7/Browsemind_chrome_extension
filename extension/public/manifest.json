@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "BrowseMind",
+  "version": "0.1.0",
+  "description": "Track & manage browsing time",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "index.html#/popup"
+  },
+  "options_page": "index.html#/options",
+  "background": {
+    "service_worker": "background/index.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/tracker.js", "content/blockSites.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "alarms",
+    "idle",
+    "notifications"
+  ],
+  "host_permissions": ["<all_urls>"]
+}
