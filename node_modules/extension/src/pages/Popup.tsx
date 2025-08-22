@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { Clock, AlertCircle, Settings, BarChart3 } from "lucide-react";
+import { AlertCircle, Settings, BarChart3 } from "lucide-react"; // Removed Clock as it's not used
 import Card from "../components/Card";
 import Button from "../components/Button";
 import {
-  getTodayUsage,
-  getBlockedSites,
+  getStorageData, // Import getStorageData to fetch all settings
   toggleFocusMode,
-  getFocusMode,
 } from "../utils/storage";
 import { login } from "../utils/api";
 import type { User } from "../types";
 
 const Popup: React.FC = () => {
-  const [todayUsage, setTodayUsage] = useState(0);
-  const [blockedSitesCount, setBlockedSitesCount] = useState(0);
+  const [dailyUsageData, setDailyUsageData] = useState<{
+    [key: string]: number;
+  }>({});
+  const [blockedSitesList, setBlockedSitesList] = useState<string[]>([]);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [email, setEmail] = useState("");
@@ -22,16 +22,33 @@ const Popup: React.FC = () => {
 
   useEffect(() => {
     loadData();
+
+    // Add a listener for storage changes
+    const handleStorageChange = (changes: {
+      [key: string]: chrome.storage.StorageChange;
+    }) => {
+      if (changes.blockedSites || changes.usageData || changes.focusMode) {
+        loadData(); // Reload data if relevant storage items change
+      }
+    };
+
+    chrome.storage.sync.onChanged.addListener(handleStorageChange);
+
+    // Clean up the listener when the component unmounts
+    return () => {
+      chrome.storage.sync.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   const loadData = async () => {
-    const usage = await getTodayUsage();
-    const blockedSites = await getBlockedSites();
-    const focusMode = await getFocusMode();
+    const settings = await getStorageData(); // Fetch all settings
+    const today = new Date().toDateString();
 
-    setTodayUsage(usage);
-    setBlockedSitesCount(blockedSites.length);
-    setIsFocusMode(focusMode);
+    setDailyUsageData(
+      settings.usageData[today] ? { [today]: settings.usageData[today] } : {}
+    ); // Get today's usage data
+    setBlockedSitesList(settings.blockedSites); // Get the actual blocked sites list
+    setIsFocusMode(settings.focusMode);
   };
 
   const handleToggleFocus = async () => {
@@ -58,19 +75,8 @@ const Popup: React.FC = () => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  // here the sites are hardcoded for demonstration purposes
-  const sampleforSites = {
-    "example.com": 120,
-    "testsite.org": 45,
-    "sample.net": 30,
-  };
-
-  // here is also a hardcoded count of blocked sites for demonstration purposes
-  const sampleBlockedSitesCount = {
-    "example.com": 1,
-    "testsite.org": 2,
-    "sample.net": 3,
-  };
+  // Calculate total blocked sites count for display
+  const totalBlockedSitesCount = blockedSitesList.length;
 
   return (
     <div className="w-100 p-4 bg-gray-800 rounded-2xl text-white">
@@ -110,11 +116,11 @@ const Popup: React.FC = () => {
       <Card title="Today's Browsing" className="mb-4">
         <div className="flex items-center">
           <div>
-            {sampleforSites && Object.keys(sampleforSites).length > 0 ? (
+            {Object.keys(dailyUsageData).length > 0 ? (
               <ul className="list-disc pl-5">
-                {Object.entries(sampleforSites).map(([site, minutes]) => (
-                  <li key={site} className="mb-1">
-                    <span className="font-semibold">{site}:</span>{" "}
+                {Object.entries(dailyUsageData).map(([date, minutes]) => (
+                  <li key={date} className="mb-1">
+                    <span className="font-semibold">{date}:</span>{" "}
                     {formatTime(minutes)}
                   </li>
                 ))}
@@ -147,14 +153,18 @@ const Popup: React.FC = () => {
       <Card title="Blocked Sites" className="mb-4">
         <div className="flex items-center">
           <AlertCircle className="text-red-500 mr-2" size={20} />
-          <span>{blockedSitesCount} sites blocked</span>
+          <span>{totalBlockedSitesCount} sites blocked</span>
         </div>
         <ul className="list-disc pl-5 ml-2">
-          {Object.entries(sampleBlockedSitesCount).map(([site, count]) => (
-            <li key={site} className="mb-1">
-              <span className="font-semibold">{site}:</span> {count} times
-            </li>
-          ))}
+          {blockedSitesList.length > 0 ? (
+            blockedSitesList.map((site) => (
+              <li key={site} className="mb-1">
+                <span className="font-semibold">{site}</span>
+              </li>
+            ))
+          ) : (
+            <li className="text-gray-600">No sites blocked</li>
+          )}
         </ul>
         <div>
           <span className="text-blue-500 ">More</span>
@@ -164,9 +174,7 @@ const Popup: React.FC = () => {
       <div className="flex justify-between">
         <Button
           variant="secondary"
-          onClick={() =>
-            chrome.tabs.create({ url: "/src/pages/Options/index.html" })
-          }
+          onClick={() => chrome.tabs.create({ url: "options.html" })}
           className="flex items-center"
         >
           <Settings size={16} className="mr-1" />
@@ -175,9 +183,7 @@ const Popup: React.FC = () => {
         <Button
           onClick={() =>
             chrome.tabs.create({
-              url:
-                chrome.runtime.getURL("src/pages/Options/index.html") +
-                "#stats",
+              url: chrome.runtime.getURL("options.html") + "#stats",
             })
           }
         >

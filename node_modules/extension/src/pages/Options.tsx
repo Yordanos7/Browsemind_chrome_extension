@@ -11,15 +11,24 @@ import {
   getFocusDuration,
   setFocusDuration,
 } from "../utils/storage";
+import Dashboard from "./Dashboard"; // Import Dashboard component
 
 const Options: React.FC = () => {
   const [blockedSites, setBlockedSites] = useState<string[]>([]);
   const [newSite, setNewSite] = useState("");
   const [dailyLimit, setDailyLimitState] = useState(120);
   const [focusDuration, setFocusDurationState] = useState(25);
+  const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
+    const handleHashChange = () => {
+      setShowStats(window.location.hash === "#stats");
+    };
+
+    handleHashChange(); // Set initial state
+    window.addEventListener("hashchange", handleHashChange);
     loadSettings();
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   const loadSettings = async () => {
@@ -55,6 +64,10 @@ const Options: React.FC = () => {
     setFocusDurationState(duration);
   };
 
+  if (showStats) {
+    return <Dashboard />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
@@ -84,7 +97,7 @@ const Options: React.FC = () => {
                 >
                   <span className="text-sm">{site}</span>
                   <Button
-                    variant="danger"
+                    variant="secondary"
                     onClick={() => handleRemoveSite(site)}
                     className="text-xs py-1"
                   >

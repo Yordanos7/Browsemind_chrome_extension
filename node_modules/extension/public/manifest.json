@@ -9,9 +9,9 @@
     "128": "icon128.png"
   },
   "action": {
-    "default_popup": "index.html#/popup"
+    "default_popup": "index.html"
   },
-  "options_page": "index.html#/options",
+  "options_page": "options.html",
   "background": {
     "service_worker": "background/index.js"
   },

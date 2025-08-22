@@ -13,7 +13,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // this background script listens for messages from the content script or popup and handles them accordingly
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
+  // Renamed 'sender' to '_sender'
   switch (request.type) {
     case "Time_SPENT":
       handleTimeSpent(request.timeSpent, request.url);
@@ -24,6 +25,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       checkBlockedSite(request.url).then((isBlocked) => {
         sendResponse({ isBlocked });
       });
+      break; // Added missing break statement
     case "OPEN_OPTIONS":
       chrome.runtime.openOptionsPage();
       sendResponse({ success: "true" });
@@ -133,3 +135,8 @@ const checkFocusModeStatus = async () => {
     }
   }
 };
+
+// Add a listener to enforce focus mode when the active tab changes
+chrome.tabs.onActivated.addListener(() => {
+  checkFocusModeStatus();
+});
