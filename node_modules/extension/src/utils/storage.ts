@@ -4,7 +4,9 @@ export interface Settings {
   focusDuration: number;
   focusMode: boolean;
   usageData: {
-    [data: string]: number;
+    [date: string]: {
+      [site: string]: number;
+    };
   };
   authToken?: string; // Add authToken to settings
 }
@@ -75,23 +77,31 @@ export const toggleFocusMode = async (): Promise<void> => {
   await setStorageData({ focusMode: !data.focusMode });
 };
 
-export const getTodayUsage = async (): Promise<number> => {
+export const getTodayUsage = async (): Promise<{ [site: string]: number }> => {
   const data = await getStorageData();
   const today = new Date().toDateString();
-  return data.usageData[today] || 0; // to tell you how this is work is like it returns the usage for today or 0 if there is no usage data for today
+  return data.usageData[today] || {};
 };
 
 export const updateTodayUsage = async (
+  site: string,
   additionalMinutes: number
 ): Promise<void> => {
   const data = await getStorageData();
   const today = new Date().toDateString();
-  const currentUsage = data.usageData[today] || 0;
-  const updatedUsage = {
-    ...data.usageData,
-    [today]: currentUsage + additionalMinutes,
+  const todayUsage = data.usageData[today] || {};
+  const currentSiteUsage = todayUsage[site] || 0;
+
+  const updatedTodayUsage = {
+    ...todayUsage,
+    [site]: currentSiteUsage + additionalMinutes,
   };
-  await setStorageData({ usageData: updatedUsage });
+
+  const updatedUsageData = {
+    ...data.usageData,
+    [today]: updatedTodayUsage,
+  };
+  await setStorageData({ usageData: updatedUsageData });
 };
 
 export const getAuthToken = async (): Promise<string | undefined> => {

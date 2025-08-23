@@ -1,14 +1,18 @@
+import { updateTodayUsage, getStorageData } from "../utils/storage";
+
 // this background script is responsible for handling the background tasks of the extension, such as listening for messages and managing the state of blocked sites.
 
 // here i set the defult values of extension settings
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.sync.set({
+chrome.runtime.onInstalled.addListener(async () => {
+  const defaultSettings = {
     blockedSites: [],
     dailyLimit: 120,
     focusMode: false,
     focusDuration: 25,
     usageData: {},
-  });
+    authToken: undefined,
+  };
+  await chrome.storage.sync.set(defaultSettings);
 });
 
 // this background script listens for messages from the content script or popup and handles them accordingly
@@ -41,20 +45,31 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
 const handleTimeSpent = async (timeSpent: number, url: string) => {
   console.log(`Time spent on ${url}: ${timeSpent} seconds`);
 
+  // Extract hostname from the URL
+  let hostname = "";
+  try {
+    const urlObj = new URL(url);
+    hostname = urlObj.hostname;
+  } catch (error) {
+    console.error("Invalid URL for tracking:", url);
+    return;
+  }
+
   // Convert seconds to minutes and update storage
   const minutes = Math.round(timeSpent / 60);
-  if (minutes > 0) {
-    const today = new Date().toDateString();
-    const data = await chrome.storage.sync.get(["usageData"]);
-    const currentUsage = data.usageData[today] || 0;
-    const updatedUsage = { ...data.usageData, [today]: currentUsage + minutes };
-
-    await chrome.storage.sync.set({ usageData: updatedUsage });
+  if (minutes > 0 && hostname) {
+    await updateTodayUsage(hostname, minutes);
 
     // Check if daily limit is exceeded
-    const dailyLimit =
-      (await chrome.storage.sync.get(["dailyLimit"])).dailyLimit || 120;
-    if (currentUsage + minutes >= dailyLimit) {
+    const settings = await getStorageData();
+    const dailyLimit = settings.dailyLimit || 120;
+    const todayUsage = settings.usageData[new Date().toDateString()] || {};
+    const totalMinutesToday = Object.values(todayUsage).reduce(
+      (sum, siteMinutes) => sum + siteMinutes,
+      0
+    );
+
+    if (totalMinutesToday >= dailyLimit) {
       showDailyLimitNotification();
     }
   }

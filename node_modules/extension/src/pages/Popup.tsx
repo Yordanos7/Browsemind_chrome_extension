@@ -9,7 +9,9 @@ import {
 
 const Popup: React.FC = () => {
   const [dailyUsageData, setDailyUsageData] = useState<{
-    [key: string]: number;
+    [date: string]: {
+      [site: string]: number;
+    };
   }>({});
   const [blockedSitesList, setBlockedSitesList] = useState<string[]>([]);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -39,7 +41,9 @@ const Popup: React.FC = () => {
     const today = new Date().toDateString();
 
     setDailyUsageData(
-      settings.usageData[today] ? { [today]: settings.usageData[today] } : {}
+      settings.usageData[today]
+        ? { [today]: settings.usageData[today] }
+        : { [today]: {} }
     ); // Get today's usage data
     setBlockedSitesList(settings.blockedSites); // Get the actual blocked sites list
     setIsFocusMode(settings.focusMode);
@@ -66,17 +70,20 @@ const Popup: React.FC = () => {
           <BarChart3 className="text-blue-600 mr-2" size={24} />
           <h1 className="text-xl font-bold ">BrowseMind</h1>
         </div>
-        <div className="text-sm">{/* Login form removed */}</div>
       </div>
 
       <Card title="Today's Browsing" className="mb-4">
         <div className="flex items-center">
           <div>
-            {Object.keys(dailyUsageData).length > 0 ? (
+            {Object.keys(dailyUsageData).length > 0 &&
+            Object.keys(dailyUsageData[new Date().toDateString()] || {})
+              .length > 0 ? (
               <ul className="list-disc pl-5">
-                {Object.entries(dailyUsageData).map(([date, minutes]) => (
-                  <li key={date} className="mb-1">
-                    <span className="font-semibold">{date}:</span>{" "}
+                {Object.entries(
+                  dailyUsageData[new Date().toDateString()] || {}
+                ).map(([site, minutes]) => (
+                  <li key={site} className="mb-1">
+                    <span className="font-semibold">{site}:</span>{" "}
                     {formatTime(minutes)}
                   </li>
                 ))}
