@@ -13,7 +13,11 @@ interface BrowsingActivity {
 }
 
 function Dashboard() {
-  const [usageData, setUsageData] = useState<{ [date: string]: number }>({});
+  const [usageData, setUsageData] = useState<{
+    [date: string]: {
+      [site: string]: number;
+    };
+  }>({});
   const [detailedUsageData, setDetailedUsageData] = useState<
     BrowsingActivity[]
   >([]);
@@ -35,12 +39,18 @@ function Dashboard() {
         setDetailedUsageData(data);
 
         // Aggregate data for total and average from detailed data
-        const aggregatedDailyData: { [date: string]: number } = {};
+        const aggregatedDailyData: {
+          [date: string]: { [site: string]: number };
+        } = {};
         let totalMinutes = 0;
         data.forEach((activity) => {
           const dateKey = new Date(activity.date).toDateString();
-          aggregatedDailyData[dateKey] =
-            (aggregatedDailyData[dateKey] || 0) + activity.minutes;
+          if (!aggregatedDailyData[dateKey]) {
+            aggregatedDailyData[dateKey] = {};
+          }
+          aggregatedDailyData[dateKey][activity.domain] =
+            (aggregatedDailyData[dateKey][activity.domain] || 0) +
+            activity.minutes;
           totalMinutes += activity.minutes;
         });
 
@@ -49,7 +59,10 @@ function Dashboard() {
 
         const dates = Object.keys(aggregatedDailyData);
         if (dates.length > 0) {
-          setAverageDailyTime(totalMinutes / dates.length);
+          const totalDaysWithUsage = Object.values(aggregatedDailyData).filter(
+            (dayUsage) => Object.keys(dayUsage).length > 0
+          ).length;
+          setAverageDailyTime(totalMinutes / totalDaysWithUsage);
         } else {
           setAverageDailyTime(0);
         }
@@ -59,14 +72,21 @@ function Dashboard() {
         const settings = await getStorageData();
         const localData = settings.usageData || {};
         setUsageData(localData);
-        const dates = Object.keys(localData);
-        const totalMinutes = Object.values(localData).reduce(
-          (sum, minutes) => sum + minutes,
-          0
-        );
+
+        let totalMinutes = 0;
+        Object.values(localData).forEach((dayUsage) => {
+          Object.values(dayUsage).forEach((minutes) => {
+            totalMinutes += minutes;
+          });
+        });
         setTotalBrowsingTime(totalMinutes);
+
+        const dates = Object.keys(localData);
         if (dates.length > 0) {
-          setAverageDailyTime(totalMinutes / dates.length);
+          const totalDaysWithUsage = Object.values(localData).filter(
+            (dayUsage) => Object.keys(dayUsage).length > 0
+          ).length;
+          setAverageDailyTime(totalMinutes / totalDaysWithUsage);
         } else {
           setAverageDailyTime(0);
         }
@@ -76,14 +96,21 @@ function Dashboard() {
       const settings = await getStorageData();
       const localData = settings.usageData || {};
       setUsageData(localData);
-      const dates = Object.keys(localData);
-      const totalMinutes = Object.values(localData).reduce(
-        (sum, minutes) => sum + minutes,
-        0
-      );
+
+      let totalMinutes = 0;
+      Object.values(localData).forEach((dayUsage) => {
+        Object.values(dayUsage).forEach((minutes) => {
+          totalMinutes += minutes;
+        });
+      });
       setTotalBrowsingTime(totalMinutes);
+
+      const dates = Object.keys(localData);
       if (dates.length > 0) {
-        setAverageDailyTime(totalMinutes / dates.length);
+        const totalDaysWithUsage = Object.values(localData).filter(
+          (dayUsage) => Object.keys(dayUsage).length > 0
+        ).length;
+        setAverageDailyTime(totalMinutes / totalDaysWithUsage);
       } else {
         setAverageDailyTime(0);
       }
@@ -163,21 +190,35 @@ function Dashboard() {
           Daily Usage Breakdown (Aggregated)
         </h3>
         {Object.keys(usageData).length > 0 ? (
-          <ul className="space-y-2">
+          <ul className="space-y-4">
             {Object.entries(usageData)
               .sort(
                 ([dateA], [dateB]) =>
                   new Date(dateB).getTime() - new Date(dateA).getTime()
               ) // Sort by date descending
-              .map(([date, minutes]) => (
+              .map(([date, sites]) => (
                 <li
                   key={date}
-                  className="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0"
+                  className="py-2 border-b border-gray-200 last:border-b-0"
                 >
-                  <span className="font-medium text-gray-700">{date}</span>
-                  <span className="text-lg font-semibold text-gray-900">
-                    {formatTime(minutes)}
+                  <span className="font-bold text-gray-800 block mb-2">
+                    {date}
                   </span>
+                  <ul className="space-y-1 pl-4">
+                    {Object.entries(sites)
+                      .sort(([, timeA], [, timeB]) => timeB - timeA) // Sort sites by time descending
+                      .map(([site, minutes]) => (
+                        <li
+                          key={site}
+                          className="flex justify-between items-center text-sm"
+                        >
+                          <span className="text-gray-700">{site}</span>
+                          <span className="font-semibold text-gray-900">
+                            {formatTime(minutes)}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
                 </li>
               ))}
           </ul>

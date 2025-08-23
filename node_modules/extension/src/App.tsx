@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Options from "./pages/Options";
 import Popup from "./pages/Popup";
@@ -15,10 +15,10 @@ function App() {
       const token = await getAuthToken();
       if (token) {
         setIsAuthenticated(true);
-        navigate("/popup"); // Redirect to popup if authenticated
+        navigate("/#/popup"); // Redirect to popup if authenticated
       } else {
         setIsAuthenticated(false);
-        navigate("/"); // Stay on register if not authenticated
+        navigate("/#/"); // Stay on register if not authenticated
       }
     };
     checkAuth();

@@ -24,7 +24,7 @@ const Register: React.FC = () => {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-      navigate("/popup"); // Navigate to the popup page
+      navigate("/#/popup"); // Navigate to the popup page
     } catch (error: any) {
       setError(error.message || "Registration failed.");
     }
