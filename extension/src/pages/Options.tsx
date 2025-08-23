@@ -10,6 +10,8 @@ import {
   setDailyLimit,
   getFocusDuration,
   setFocusDuration,
+  getFocusMode,
+  toggleFocusMode,
 } from "../utils/storage";
 import Dashboard from "./Dashboard"; // Import Dashboard component
 
@@ -18,6 +20,7 @@ const Options: React.FC = () => {
   const [newSite, setNewSite] = useState("");
   const [dailyLimit, setDailyLimitState] = useState(120);
   const [focusDuration, setFocusDurationState] = useState(25);
+  const [focusMode, setFocusModeState] = useState(false); // Add state for focusMode
   const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
@@ -35,10 +38,12 @@ const Options: React.FC = () => {
     const sites = await getBlockedSites();
     const limit = await getDailyLimit();
     const duration = await getFocusDuration();
+    const mode = await getFocusMode(); // Get focus mode state
 
     setBlockedSites(sites);
     setDailyLimitState(limit);
     setFocusDurationState(duration);
+    setFocusModeState(mode); // Set focus mode state
   };
 
   const handleAddSite = async () => {
@@ -62,6 +67,11 @@ const Options: React.FC = () => {
   const handleFocusDurationChange = async (duration: number) => {
     await setFocusDuration(duration);
     setFocusDurationState(duration);
+  };
+
+  const handleToggleFocusMode = async () => {
+    await toggleFocusMode();
+    setFocusModeState((prevMode) => !prevMode); // Toggle focus mode state
   };
 
   if (showStats) {
@@ -161,6 +171,40 @@ const Options: React.FC = () => {
                 Current: {focusDuration} minutes per focus session
               </p>
             </div>
+          </Card>
+
+          {/* Focus Mode Toggle */}
+          <Card title="Focus Mode">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">
+                Enable Focus Mode (Block all sites EXCEPT listed)
+              </span>
+              <label
+                htmlFor="focus-mode-toggle"
+                className="flex items-center cursor-pointer"
+              >
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    id="focus-mode-toggle"
+                    className="sr-only"
+                    checked={focusMode}
+                    onChange={handleToggleFocusMode}
+                  />
+                  <div className="block bg-gray-300 w-14 h-8 rounded-full"></div>
+                  <div
+                    className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition ${
+                      focusMode ? "translate-x-full bg-blue-600" : ""
+                    }`}
+                  ></div>
+                </div>
+              </label>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              {focusMode
+                ? "Focus Mode is ON: Only sites in 'Blocked Websites' list are allowed."
+                : "Focus Mode is OFF: Only sites in 'Blocked Websites' list are blocked."}
+            </p>
           </Card>
         </div>
       </div>

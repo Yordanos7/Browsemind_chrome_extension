@@ -18,7 +18,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content/tracker.js", "content/blockSites.js"],
+      "js": ["content/tracker.js"],
       "run_at": "document_idle"
     }
   ],

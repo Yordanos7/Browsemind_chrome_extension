@@ -126,7 +126,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         // Inject the content script to show blocking page
         chrome.scripting.executeScript({
           target: { tabId },
-          files: ["src/content/blockSites.js"],
+          files: ["content/blockSites.js"], // Corrected path
         });
       }
     } catch (error) {
