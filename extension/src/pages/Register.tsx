@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-// import type { User } from "../types"; // Removed unused import
+import { useNavigate } from "react-router-dom";
 import { register } from "../utils/api";
 const Register: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -7,7 +7,7 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>("");
   const [success, setSuccess] = useState<string | null>("");
-  // const [user, setUser] = useState<User | null>(null); // Removed unused user state
+  const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,11 +19,12 @@ const Register: React.FC = () => {
     }
 
     try {
-      await register({ email, password }); // Removed destructuring 'user' and setUser call
-      setSuccess("Registration successful! You are redirect to login page.");
+      await register({ email, password });
+      setSuccess("Registration successful! Redirecting to popup...");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      navigate("/popup"); // Navigate to the popup page
     } catch (error: any) {
       setError(error.message || "Registration failed.");
     }

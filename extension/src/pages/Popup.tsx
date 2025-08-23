@@ -6,8 +6,6 @@ import {
   getStorageData, // Import getStorageData to fetch all settings
   toggleFocusMode,
 } from "../utils/storage";
-import { login } from "../utils/api";
-import type { User } from "../types";
 
 const Popup: React.FC = () => {
   const [dailyUsageData, setDailyUsageData] = useState<{
@@ -15,10 +13,6 @@ const Popup: React.FC = () => {
   }>({});
   const [blockedSitesList, setBlockedSitesList] = useState<string[]>([]);
   const [isFocusMode, setIsFocusMode] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -56,19 +50,6 @@ const Popup: React.FC = () => {
     setIsFocusMode(!isFocusMode);
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    try {
-      const { user } = await login({ email, password });
-      setUser(user);
-      // In a real app, you'd store the token securely
-      console.log("Logged in successfully:", user);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -85,32 +66,7 @@ const Popup: React.FC = () => {
           <BarChart3 className="text-blue-600 mr-2" size={24} />
           <h1 className="text-xl font-bold ">BrowseMind</h1>
         </div>
-        <div className="text-sm">
-          {user ? (
-            <div>Hi, {user.email}</div>
-          ) : (
-            <form onSubmit={handleLogin} className="flex flex-col">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
-                className="mb-1 px-2 py-1 rounded bg-gray-700 text-white border border-gray-600"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="mb-1 px-2 py-1 rounded bg-gray-700 text-white border border-gray-600"
-              />
-              <Button type="submit" variant="primary">
-                Sign In
-              </Button>
-              {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-            </form>
-          )}
-        </div>
+        <div className="text-sm">{/* Login form removed */}</div>
       </div>
 
       <Card title="Today's Browsing" className="mb-4">
