@@ -6,6 +6,7 @@ export interface Settings {
   usageData: {
     [data: string]: number;
   };
+  authToken?: string; // Add authToken to settings
 }
 
 // this is the defult setting for the extension in case the user has not yet set any settings
@@ -15,6 +16,7 @@ const defultSettings: Settings = {
   focusDuration: 25, // in minutes
   focusMode: false,
   usageData: {},
+  authToken: undefined, // Default to no token
 };
 
 export const getStorageData = async (): Promise<Settings> => {
@@ -90,4 +92,15 @@ export const updateTodayUsage = async (
     [today]: currentUsage + additionalMinutes,
   };
   await setStorageData({ usageData: updatedUsage });
+};
+
+export const getAuthToken = async (): Promise<string | undefined> => {
+  const data = await getStorageData();
+  return data.authToken;
+};
+
+export const setAuthToken = async (
+  token: string | undefined
+): Promise<void> => {
+  await setStorageData({ authToken: token });
 };

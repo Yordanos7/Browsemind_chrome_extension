@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertCircle, Settings, BarChart3 } from "lucide-react"; // Removed Clock as it's not used
+import { AlertCircle, Settings, BarChart3 } from "lucide-react";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import {
@@ -28,13 +28,13 @@ const Popup: React.FC = () => {
       [key: string]: chrome.storage.StorageChange;
     }) => {
       if (changes.blockedSites || changes.usageData || changes.focusMode) {
-        loadData(); // Reload data if relevant storage items change
+        loadData(); // Reload data if relevant storage items change to update the function of the components
       }
     };
 
     chrome.storage.sync.onChanged.addListener(handleStorageChange);
 
-    // Clean up the listener when the component unmounts
+    // Clean up the listener when the component unmounts this is for avoiding memory leaks
     return () => {
       chrome.storage.sync.onChanged.removeListener(handleStorageChange);
     };
@@ -79,7 +79,7 @@ const Popup: React.FC = () => {
   const totalBlockedSitesCount = blockedSitesList.length;
 
   return (
-    <div className="w-100 p-4 bg-gray-800 rounded-2xl text-white">
+    <div className="w-100 p-4 bg-gray-800  text-white">
       <div className="flex items-center mb-4 justify-between text-white">
         <div className="flex">
           <BarChart3 className="text-blue-600 mr-2" size={24} />
@@ -174,7 +174,7 @@ const Popup: React.FC = () => {
       <div className="flex justify-between">
         <Button
           variant="secondary"
-          onClick={() => chrome.tabs.create({ url: "options.html" })}
+          onClick={() => chrome.tabs.create({ url: "options.html#/options" })}
           className="flex items-center"
         >
           <Settings size={16} className="mr-1" />
@@ -183,7 +183,7 @@ const Popup: React.FC = () => {
         <Button
           onClick={() =>
             chrome.tabs.create({
-              url: chrome.runtime.getURL("options.html") + "#stats",
+              url: chrome.runtime.getURL("options.html") + "#/stats",
             })
           }
         >

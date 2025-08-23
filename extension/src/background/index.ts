@@ -25,7 +25,7 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       checkBlockedSite(request.url).then((isBlocked) => {
         sendResponse({ isBlocked });
       });
-      break; // Added missing break statement
+      break;
     case "OPEN_OPTIONS":
       chrome.runtime.openOptionsPage();
       sendResponse({ success: "true" });
@@ -62,14 +62,45 @@ const handleTimeSpent = async (timeSpent: number, url: string) => {
 
 // and this is for check if the current site is blocked
 
-const checkBlockedSite = async (url: string): Promise<boolean> => {
+const checkBlockedSite = async (urlHostname: string): Promise<boolean> => {
   const data = await chrome.storage.sync.get(["blockedSites", "focusMode"]);
   const blockedSites: string[] = data.blockedSites || [];
   const focusMode = data.focusMode || false;
+
+  // Normalize the current URL's hostname (remove 'www.' if present)
+  const normalizedUrlHostname = urlHostname.startsWith("www.")
+    ? urlHostname.substring(4)
+    : urlHostname;
+
+  // Helper to check if a hostname matches any site in a given list
+  const matchesSiteList = (list: string[]) => {
+    return list.some((site) => {
+      // Normalize the blocked site entry (remove 'www.' if present)
+      const normalizedSite = site.startsWith("www.") ? site.substring(4) : site;
+      // Check for exact match or subdomain match
+      return (
+        normalizedUrlHostname === normalizedSite ||
+        normalizedUrlHostname.endsWith(`.${normalizedSite}`)
+      );
+    });
+  };
+
+  console.log("checkBlockedSite called for:", urlHostname);
+  console.log("Focus Mode:", focusMode);
+  console.log("Blocked Sites (from storage):", blockedSites);
+  console.log("Normalized URL Hostname:", normalizedUrlHostname);
+
+  let isBlockedResult: boolean;
   if (focusMode) {
-    return blockedSites.some((site) => url.includes(site));
+    // In Focus Mode: Block all sites EXCEPT those in blockedSites (allow list)
+    // So, if the current site is NOT in the blockedSites list, it IS blocked.
+    isBlockedResult = !matchesSiteList(blockedSites);
+  } else {
+    // Focus Mode OFF: Block only sites explicitly listed in blockedSites (block list)
+    isBlockedResult = matchesSiteList(blockedSites);
   }
-  return false;
+  console.log("Is Blocked Result:", isBlockedResult);
+  return isBlockedResult;
 };
 
 // this is for show notification if the daily limit is exceeded
@@ -108,7 +139,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
 const checkFocusModeStatus = async () => {
   const data = await chrome.storage.sync.get(["focusMode", "blockedSites"]);
   const focusMode: boolean = data.focusMode || false;
-  const blockedSites: string[] = data.blockedSites || [];
+  //const blockedSites: string[] = data.blockedSites || [];
 
   if (focusMode) {
     // Get current tab
@@ -118,9 +149,8 @@ const checkFocusModeStatus = async () => {
       if (currentTab.url) {
         try {
           const url = new URL(currentTab.url);
-          const isBlocked = blockedSites.some((site) =>
-            url.hostname.includes(site)
-          );
+          // Use the updated checkBlockedSite logic for consistency
+          const isBlocked = await checkBlockedSite(url.hostname);
 
           if (isBlocked) {
             // Redirect to a productive site or show blocked page
