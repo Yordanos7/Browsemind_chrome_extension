@@ -17,8 +17,8 @@ const Login: React.FC = () => {
       setUser(user);
       // In a real app, you'd store the token securely and redirect
       console.log("Logged in successfully:", user);
-      // Example: Redirect to the dashboard or popup page
-      window.location.hash = "/";
+      // Redirect to the popup page
+      window.location.hash = "/popup";
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.");
     }
