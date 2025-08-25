@@ -39,15 +39,42 @@ export const getBlockedSites = async (): Promise<string[]> => {
 
 export const addBlockedSite = async (site: string): Promise<void> => {
   const data = await getStorageData();
-  if (!data.blockedSites.includes(site)) {
-    const updatedSites = [...data.blockedSites, site];
+  let normalizedSite = site.trim();
+  try {
+    // Attempt to parse as a URL to extract hostname
+    const urlObj = new URL(site.startsWith("http") ? site : `https://${site}`);
+    normalizedSite = urlObj.hostname;
+  } catch (error) {
+    // If not a valid URL, use as is (e.g., "google.com")
+    console.warn("Could not parse site as URL, using as-is:", site);
+  }
+
+  // Remove 'www.' prefix for consistency
+  if (normalizedSite.startsWith("www.")) {
+    normalizedSite = normalizedSite.substring(4);
+  }
+
+  if (normalizedSite && !data.blockedSites.includes(normalizedSite)) {
+    const updatedSites = [...data.blockedSites, normalizedSite];
     await setStorageData({ blockedSites: updatedSites });
   }
 };
 
 export const removeBlockedSite = async (site: string): Promise<void> => {
   const data = await getStorageData();
-  const updatedSites = data.blockedSites.filter((s) => s !== site);
+  let normalizedSite = site.trim();
+  try {
+    const urlObj = new URL(site.startsWith("http") ? site : `https://${site}`);
+    normalizedSite = urlObj.hostname;
+  } catch (error) {
+    console.warn("Could not parse site as URL for removal, using as-is:", site);
+  }
+
+  if (normalizedSite.startsWith("www.")) {
+    normalizedSite = normalizedSite.substring(4);
+  }
+
+  const updatedSites = data.blockedSites.filter((s) => s !== normalizedSite);
   await setStorageData({ blockedSites: updatedSites });
 };
 

@@ -39,6 +39,15 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
       console.log("Tracking started for:", request.url);
       sendResponse({ success: "true" });
       break;
+    case "OPEN_POPUP_PAGE":
+      chrome.windows.create({
+        url: chrome.runtime.getURL("popup.html"),
+        type: "popup",
+        width: 400,
+        height: 600,
+      });
+      sendResponse({ success: true });
+      break;
   }
 });
 
