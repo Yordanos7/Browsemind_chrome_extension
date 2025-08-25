@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Options from "./pages/Options";
 import Popup from "./pages/Popup";
 import Register from "./pages/Register";
@@ -8,44 +8,30 @@ import { getAuthToken } from "./utils/storage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const navigate = useNavigate();
+  // Removed useNavigate from here, components will handle their own navigation
 
   useEffect(() => {
     const checkAuth = async () => {
       const token = await getAuthToken();
-      if (token) {
-        setIsAuthenticated(true);
-        navigate("/#/popup"); // Redirect to popup if authenticated
-      } else {
-        setIsAuthenticated(false);
-        navigate("/#/"); // Stay on register if not authenticated
-      }
+      setIsAuthenticated(!!token); // Set true if token exists, false otherwise
     };
     checkAuth();
   }, []);
 
   if (isAuthenticated === null) {
-    return <div>Loading...</div>; // Or a more sophisticated loading spinner
+    return <div>Loading...</div>; // Show loading while checking auth
   }
 
   return (
     <Routes>
-      {isAuthenticated ? (
-        <>
-          <Route path="/" element={<Popup />} />{" "}
-          {/* Default to Popup if authenticated */}
-          <Route path="/popup" element={<Popup />} />
-        </>
-      ) : (
-        <>
-          <Route path="/" element={<Register />} />{" "}
-          {/* Default to Register if not authenticated */}
-          <Route path="/register" element={<Register />} />{" "}
-          {/* Keep /register route for direct access if needed */}
-        </>
-      )}
+      {/* If authenticated, default to Popup. If not, default to Register. */}
+      <Route path="/" element={isAuthenticated ? <Popup /> : <Register />} />
+      {/* Specific routes */}
+      <Route path="/popup" element={<Popup />} />
       <Route path="/options" element={<Options />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />{" "}
+      {/* Keep /register route for direct access if needed */}
     </Routes>
   );
 }

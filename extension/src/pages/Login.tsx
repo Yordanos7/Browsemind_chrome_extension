@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../utils/api"; // Assuming login function is in api.ts
 import type { User } from "../types"; // Assuming User type is defined in types.ts
-import { sendMessage } from "../utils/messaging";
+//import { sendMessage } from "../utils/messaging";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
