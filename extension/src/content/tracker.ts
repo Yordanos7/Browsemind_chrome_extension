@@ -2,7 +2,7 @@ let startTime: number;
 let isTracking = false;
 
 const startTracking = () => {
-  if (!isTracking) return;
+  // Removed the `if (!isTracking) return;` line to allow tracking to start
   startTime = Date.now();
   isTracking = true;
 
@@ -31,13 +31,12 @@ if (document.readyState === "loading") {
   startTracking();
 }
 
-window.addEventListener("beforeunload", stopTracking); // this means when the user is about to leave the page, we stop tracking the time spent on the page
-window.addEventListener("unload", stopTracking); // this means when the user is leaving the page, we stop tracking the time spent on the page
-
+// Removed unload and beforeunload listeners due to Permissions Policy restrictions.
+// The visibilitychange listener handles tracking when the tab is active or hidden.
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") {
     stopTracking();
   } else if (document.visibilityState === "visible") {
     startTracking();
   }
-}); // this means when the user switches to another tab or minimizes the browser, we stop tracking the time spent on the page, and when the user comes back to the page, we start tracking again
+});

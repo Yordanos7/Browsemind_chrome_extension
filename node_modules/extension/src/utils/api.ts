@@ -24,6 +24,27 @@ export const register = async (
   return authResponse;
 };
 
+export const saveBrowsingData = async (
+  token: string,
+  domain: string,
+  minutes: number,
+  date: string
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/activities/browsing-data`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ domain, minutes, date }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to save browsing data");
+  }
+};
+
 export const getBrowsingData = async (token: string): Promise<any[]> => {
   const response = await fetch(`${API_BASE_URL}/activities/browsing-data`, {
     method: "GET",

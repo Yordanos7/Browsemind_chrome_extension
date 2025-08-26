@@ -20,6 +20,11 @@ chrome.runtime.onInstalled.addListener(async () => {
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   // Renamed 'sender' to '_sender'
   switch (request.type) {
+    case "TRACKING_STOPPED": // Handle the TRACKING_STOPPED message
+      handleTimeSpent(request.url, request.timespent); // Call handleTimeSpent with url and timespent
+      sendResponse({ success: true });
+      break;
+
     case "Time_SPENT":
       handleTimeSpent(request.timeSpent, request.url);
       sendResponse({ success: "true" });
@@ -51,7 +56,8 @@ chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   }
 });
 
-const handleTimeSpent = async (timeSpent: number, url: string) => {
+const handleTimeSpent = async (url: string, timeSpent: number) => {
+  // Swapped parameter order to match request
   console.log(`Time spent on ${url}: ${timeSpent} seconds`);
 
   // Extract hostname from the URL

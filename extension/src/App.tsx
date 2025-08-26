@@ -4,6 +4,7 @@ import Options from "./pages/Options";
 import Popup from "./pages/Popup";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard"; // Import Dashboard
 import { getAuthToken } from "./utils/storage";
 
 function App() {
@@ -30,8 +31,9 @@ function App() {
       <Route path="/popup" element={<Popup />} />
       <Route path="/options" element={<Options />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />{" "}
-      {/* Keep /register route for direct access if needed */}
+      <Route path="/register" element={<Register />} />
+      <Route path="/dashboard" element={<Dashboard />} />{" "}
+      {/* Add Dashboard route */}
     </Routes>
   );
 }

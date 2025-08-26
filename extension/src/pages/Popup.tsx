@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AlertCircle, Settings, BarChart3 } from "lucide-react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import Card from "../components/Card";
 import Button from "../components/Button";
 import {
@@ -15,6 +16,7 @@ const Popup: React.FC = () => {
   }>({});
   const [blockedSitesList, setBlockedSitesList] = useState<string[]>([]);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
     loadData();
@@ -143,13 +145,9 @@ const Popup: React.FC = () => {
           <Settings size={16} className="mr-1" />
           Settings
         </Button>
-        <Button
-          onClick={() =>
-            chrome.tabs.create({
-              url: chrome.runtime.getURL("options.html") + "#/stats",
-            })
-          }
-        >
+        <Button onClick={() => navigate("/dashboard")}>
+          {" "}
+          {/* Use navigate to go to /dashboard */}
           View Stats
         </Button>
       </div>
