@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom"; // Import Navigate
 import Options from "./pages/Options";
 import Popup from "./pages/Popup";
 import Register from "./pages/Register";
@@ -14,9 +14,26 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = await getAuthToken();
-      setIsAuthenticated(!!token); // Set true if token exists, false otherwise
+      setIsAuthenticated(!!token);
     };
+
     checkAuth();
+
+    // Add a listener for storage changes to update authentication status
+    const handleStorageChange = (changes: {
+      [key: string]: chrome.storage.StorageChange;
+    }) => {
+      if (changes.authToken) {
+        setIsAuthenticated(!!changes.authToken.newValue);
+      }
+    };
+
+    chrome.storage.sync.onChanged.addListener(handleStorageChange);
+
+    // Clean up the listener when the component unmounts
+    return () => {
+      chrome.storage.sync.onChanged.removeListener(handleStorageChange);
+    };
   }, []);
 
   if (isAuthenticated === null) {
@@ -30,8 +47,17 @@ function App() {
       {/* Specific routes */}
       <Route path="/popup" element={<Popup />} />
       <Route path="/options" element={<Options />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      {/* If authenticated, redirect from Login/Register to Popup */}
+      <Route
+        path="/login"
+        element={isAuthenticated ? <Navigate to="/popup" replace /> : <Login />}
+      />
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? <Navigate to="/popup" replace /> : <Register />
+        }
+      />
       <Route path="/dashboard" element={<Dashboard />} />{" "}
       {/* Add Dashboard route */}
     </Routes>
