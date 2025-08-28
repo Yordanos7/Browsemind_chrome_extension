@@ -118,7 +118,7 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="w-100 p-4 bg-gray-800  text-white">
       <h2 className="text-3xl font-bold text-gray-800 mb-6">
         Browsing Dashboard
       </h2>

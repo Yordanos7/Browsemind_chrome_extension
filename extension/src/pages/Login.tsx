@@ -27,7 +27,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="w-full p-4 bg-gray-800 rounded-2xl text-white max-w-md mx-auto mt-10">
+    <div className="w-100 p-4 bg-gray-800  text-white">
       <h1 className="text-2xl font-bold text-center mb-6">
         Login to BrowseMind
       </h1>

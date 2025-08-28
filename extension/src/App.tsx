@@ -5,10 +5,19 @@ import Popup from "./pages/Popup";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard"; // Import Dashboard
-import { getAuthToken } from "./utils/storage";
+import { getAuthToken, getBlockedSites } from "./utils/storage"; // Import getBlockedSites
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Fetch blocked sites from API and update local storage when user is authenticated
+      getBlockedSites().catch((error) =>
+        console.error("Failed to initially fetch blocked sites:", error)
+      );
+    }
+  }, [isAuthenticated]);
   // Removed useNavigate from here, components will handle their own navigation
 
   useEffect(() => {

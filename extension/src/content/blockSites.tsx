@@ -1,5 +1,11 @@
-const showBlockedWarning = () => {
+const showBlockedWarning = (reason: string, hostname: string) => {
+  // Check if the overlay already exists to prevent multiple overlays
+  if (document.getElementById("browsermind-block-overlay")) {
+    return;
+  }
+
   const overlay = document.createElement("div");
+  overlay.id = "browsermind-block-overlay"; // Add an ID for easy checking
   overlay.style.cssText = `
      position: fixed;
       top: 0;
@@ -23,7 +29,7 @@ const showBlockedWarning = () => {
   countdown.style.cssText = `
    font-size: 48px;
     font-weight: bold;
-    margin-bottom: 20px; /* Corrected mergin-bottom to margin-bottom */
+    margin-bottom: 20px;
     color:#ff4444;
     color:red;
 `;
@@ -37,9 +43,27 @@ const showBlockedWarning = () => {
   line-height: 1.5;
 `;
 
-  message.innerHTML = `<h1>This site is blocked by BrowseMind</h1>
+  let blockingMessage = "";
+  switch (reason) {
+    case "site_specific_limit_exceeded":
+      blockingMessage = `You have reached your daily time limit for ${hostname}.`;
+      break;
+    case "global_daily_limit_exceeded":
+      blockingMessage = `You have reached your global daily browsing time limit.`;
+      break;
+    case "explicitly_blocked":
+      blockingMessage = `This site (${hostname}) is explicitly blocked by BrowseMind.`;
+      break;
+    case "focus_mode_active":
+      blockingMessage = `Focus Mode is active. This site (${hostname}) is not allowed.`;
+      break;
+    default:
+      blockingMessage = `This site is blocked by BrowseMind.`;
+  }
+
+  message.innerHTML = `<h1>${blockingMessage}</h1>
        <p>Redirecting in <span id="countdown-text">5</span> seconds...</p>
-`; // Changed id="count" to id="countdown-text"
+`;
 
   const buttonContainer = document.createElement("div");
   buttonContainer.style.cssText = `
@@ -109,6 +133,10 @@ const showBlockedWarning = () => {
   }, 1000);
 };
 
-// The background script injects this content script when a site is blocked and focus mode is on.
-// So, we can directly call showBlockedWarning when the script loads.
-showBlockedWarning();
+// The background script injects this content script when a site is blocked.
+// It then sends a message with the blocking reason.
+chrome.runtime.onMessage.addListener((request) => {
+  if (request.type === "SHOW_BLOCKED_PAGE") {
+    showBlockedWarning(request.reason, request.hostname);
+  }
+});

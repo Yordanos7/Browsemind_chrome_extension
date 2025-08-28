@@ -6,19 +6,28 @@ import {
   getBlockedSites,
   addBlockedSite,
   removeBlockedSite,
-  getDailyLimit,
-  setDailyLimit,
+  getGlobalDailyLimit, // Renamed
+  setGlobalDailyLimit, // Renamed
+  // getSiteDailyLimit, // Removed as it's not directly used in Options.tsx
+  setSiteDailyLimit, // New
+  removeSiteDailyLimit, // New
   getFocusDuration,
   setFocusDuration,
   getFocusMode,
   toggleFocusMode,
-} from "../utils/storage";
+  getStorageData, // Import getStorageData
+} from "../utils/storage"; // Fixed import statement
 import Dashboard from "./Dashboard"; // Import Dashboard component
 
 const Options: React.FC = () => {
   const [blockedSites, setBlockedSites] = useState<string[]>([]);
   const [newSite, setNewSite] = useState("");
-  const [dailyLimit, setDailyLimitState] = useState(120);
+  const [globalDailyLimit, setGlobalDailyLimitState] = useState(120); // Renamed
+  const [siteDailyLimits, setSiteDailyLimitsState] = useState<{
+    [site: string]: number;
+  }>({}); // New state for site-specific limits
+  const [newSiteLimit, setNewSiteLimit] = useState(""); // New state for site input
+  const [newLimitValue, setNewLimitValue] = useState(60); // New state for limit value input
   const [focusDuration, setFocusDurationState] = useState(25);
   const [focusMode, setFocusModeState] = useState(false); // Add state for focusMode
   const [showStats, setShowStats] = useState(false);
@@ -36,12 +45,16 @@ const Options: React.FC = () => {
 
   const loadSettings = async () => {
     const sites = await getBlockedSites();
-    const limit = await getDailyLimit();
+    const globalLimit = await getGlobalDailyLimit(); // Renamed
+    const siteLimits = await getStorageData().then(
+      (data) => data.siteDailyLimits || {}
+    ); // Fetch site-specific limits
     const duration = await getFocusDuration();
     const mode = await getFocusMode(); // Get focus mode state
 
     setBlockedSites(sites);
-    setDailyLimitState(limit);
+    setGlobalDailyLimitState(globalLimit); // Renamed
+    setSiteDailyLimitsState(siteLimits); // Set site-specific limits
     setFocusDurationState(duration);
     setFocusModeState(mode); // Set focus mode state
   };
@@ -59,9 +72,10 @@ const Options: React.FC = () => {
     setBlockedSites(blockedSites.filter((s) => s !== site));
   };
 
-  const handleDailyLimitChange = async (limit: number) => {
-    await setDailyLimit(limit);
-    setDailyLimitState(limit);
+  const handleGlobalDailyLimitChange = async (limit: number) => {
+    // Renamed
+    await setGlobalDailyLimit(limit); // Renamed
+    setGlobalDailyLimitState(limit); // Renamed
   };
 
   const handleFocusDurationChange = async (duration: number) => {
@@ -72,6 +86,46 @@ const Options: React.FC = () => {
   const handleToggleFocusMode = async () => {
     await toggleFocusMode();
     setFocusModeState((prevMode) => !prevMode); // Toggle focus mode state
+  };
+
+  const handleAddSiteLimit = async () => {
+    if (newSiteLimit.trim() && newLimitValue > 0) {
+      let normalizedSite = newSiteLimit.trim();
+      try {
+        const urlObj = new URL(
+          normalizedSite.startsWith("http")
+            ? normalizedSite
+            : `https://${normalizedSite}`
+        );
+        normalizedSite = urlObj.hostname;
+      } catch (error) {
+        console.warn(
+          "Could not parse site as URL, using as-is:",
+          normalizedSite
+        );
+      }
+
+      if (normalizedSite.startsWith("www.")) {
+        normalizedSite = normalizedSite.substring(4);
+      }
+
+      await setSiteDailyLimit(normalizedSite, newLimitValue);
+      setSiteDailyLimitsState((prevLimits) => ({
+        ...prevLimits,
+        [normalizedSite]: newLimitValue,
+      }));
+      setNewSiteLimit("");
+      setNewLimitValue(60); // Reset to default
+    }
+  };
+
+  const handleRemoveSiteLimit = async (site: string) => {
+    await removeSiteDailyLimit(site);
+    setSiteDailyLimitsState((prevLimits) => {
+      const newLimits = { ...prevLimits };
+      delete newLimits[site];
+      return newLimits;
+    });
   };
 
   if (showStats) {
@@ -124,8 +178,8 @@ const Options: React.FC = () => {
             </div>
           </Card>
 
-          {/* Daily Limit */}
-          <Card title="Daily Time Limit">
+          {/* Global Daily Limit */}
+          <Card title="Global Daily Time Limit">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -133,9 +187,9 @@ const Options: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  value={dailyLimit}
+                  value={globalDailyLimit}
                   onChange={(e) =>
-                    handleDailyLimitChange(Number(e.target.value))
+                    handleGlobalDailyLimitChange(Number(e.target.value))
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   min="30"
@@ -143,9 +197,60 @@ const Options: React.FC = () => {
                 />
               </div>
               <p className="text-sm text-gray-600">
-                Currently: {Math.floor(dailyLimit / 60)}h {dailyLimit % 60}m per
-                day
+                Currently: {Math.floor(globalDailyLimit / 60)}h{" "}
+                {globalDailyLimit % 60}m per day
               </p>
+            </div>
+          </Card>
+
+          {/* Site-Specific Time Limits */}
+          <Card title="Site-Specific Time Limits">
+            <div className="mb-4">
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={newSiteLimit}
+                  onChange={(e) => setNewSiteLimit(e.target.value)}
+                  placeholder="Enter website URL (e.g., youtube.com)"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  value={newLimitValue}
+                  onChange={(e) => setNewLimitValue(Number(e.target.value))}
+                  placeholder="Minutes"
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min="1"
+                  max="1440"
+                />
+              </div>
+              <Button onClick={handleAddSiteLimit}>Add Site Limit</Button>
+            </div>
+
+            <div className="space-y-2">
+              {Object.entries(siteDailyLimits).map(([site, limit]) => (
+                <div
+                  key={site}
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                >
+                  <span className="text-sm">
+                    {site}: {limit} minutes
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleRemoveSiteLimit(site)}
+                    className="text-xs py-1"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+
+              {Object.keys(siteDailyLimits).length === 0 && (
+                <p className="text-gray-500 text-center py-4">
+                  No site-specific limits set yet
+                </p>
+              )}
             </div>
           </Card>
 

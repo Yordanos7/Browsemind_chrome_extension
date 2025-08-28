@@ -1,6 +1,9 @@
 export interface Settings {
   blockedSites: string[];
-  dailyLimit: number;
+  globalDailyLimit: number; // Renamed from dailyLimit
+  siteDailyLimits: {
+    [site: string]: number;
+  }; // New: Site-specific daily limits in minutes
   focusDuration: number;
   focusMode: boolean;
   usageData: {
@@ -11,10 +14,13 @@ export interface Settings {
   authToken?: string; // Add authToken to settings
 }
 
+import { getBlockedSitesFromApi, syncBlockedSitesToApi } from "./api"; // Import API functions
+
 // this is the defult setting for the extension in case the user has not yet set any settings
 const defultSettings: Settings = {
   blockedSites: [],
-  dailyLimit: 120, // in minutes
+  globalDailyLimit: 120, // in minutes, renamed from dailyLimit
+  siteDailyLimits: {}, // New: Initialize as empty object
   focusDuration: 25, // in minutes
   focusMode: false,
   usageData: {},
@@ -34,6 +40,22 @@ export const setStorageData = async (
 
 export const getBlockedSites = async (): Promise<string[]> => {
   const data = await getStorageData();
+  const token = data.authToken;
+
+  if (token) {
+    try {
+      const apiBlockedSites = await getBlockedSitesFromApi(token);
+      // Update local storage with sites from API
+      await setStorageData({ blockedSites: apiBlockedSites });
+      return apiBlockedSites;
+    } catch (error) {
+      console.error(
+        "Failed to fetch blocked sites from API, using local storage:",
+        error
+      );
+      return data.blockedSites;
+    }
+  }
   return data.blockedSites;
 };
 
@@ -57,6 +79,15 @@ export const addBlockedSite = async (site: string): Promise<void> => {
   if (normalizedSite && !data.blockedSites.includes(normalizedSite)) {
     const updatedSites = [...data.blockedSites, normalizedSite];
     await setStorageData({ blockedSites: updatedSites });
+
+    const token = await getAuthToken();
+    if (token) {
+      try {
+        await syncBlockedSitesToApi(token, updatedSites);
+      } catch (error) {
+        console.error("Failed to sync blocked site to API:", error);
+      }
+    }
   }
 };
 
@@ -76,15 +107,50 @@ export const removeBlockedSite = async (site: string): Promise<void> => {
 
   const updatedSites = data.blockedSites.filter((s) => s !== normalizedSite);
   await setStorageData({ blockedSites: updatedSites });
+
+  const token = await getAuthToken();
+  if (token) {
+    try {
+      await syncBlockedSitesToApi(token, updatedSites);
+    } catch (error) {
+      console.error("Failed to sync blocked site removal to API:", error);
+    }
+  }
 };
 
-export const getDailyLimit = async (): Promise<number> => {
+export const getGlobalDailyLimit = async (): Promise<number> => {
   const data = await getStorageData();
-  return data.dailyLimit;
+  return data.globalDailyLimit;
 };
 
-export const setDailyLimit = async (limit: number): Promise<void> => {
-  await setStorageData({ dailyLimit: limit });
+export const setGlobalDailyLimit = async (limit: number): Promise<void> => {
+  await setStorageData({ globalDailyLimit: limit });
+};
+
+export const getSiteDailyLimit = async (
+  site: string
+): Promise<number | undefined> => {
+  const data = await getStorageData();
+  return data.siteDailyLimits[site];
+};
+
+export const setSiteDailyLimit = async (
+  site: string,
+  limit: number
+): Promise<void> => {
+  const data = await getStorageData();
+  const updatedSiteDailyLimits = {
+    ...data.siteDailyLimits,
+    [site]: limit,
+  };
+  await setStorageData({ siteDailyLimits: updatedSiteDailyLimits });
+};
+
+export const removeSiteDailyLimit = async (site: string): Promise<void> => {
+  const data = await getStorageData();
+  const updatedSiteDailyLimits = { ...data.siteDailyLimits };
+  delete updatedSiteDailyLimits[site];
+  await setStorageData({ siteDailyLimits: updatedSiteDailyLimits });
 };
 
 export const getFocusDuration = async (): Promise<number> => {

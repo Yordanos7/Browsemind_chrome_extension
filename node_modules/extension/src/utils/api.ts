@@ -82,3 +82,41 @@ export const login = async (
   await setAuthToken(authResponse.token); // Store the token after successful login
   return authResponse;
 };
+
+export const getBlockedSitesFromApi = async (
+  token: string
+): Promise<string[]> => {
+  const response = await fetch(`${API_BASE_URL}/activities/blocked-sites`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch blocked sites");
+  }
+
+  return response.json();
+};
+
+export const syncBlockedSitesToApi = async (
+  token: string,
+  blockedSites: string[]
+): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/activities/blocked-sites`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ blockedSites }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to sync blocked sites");
+  }
+};

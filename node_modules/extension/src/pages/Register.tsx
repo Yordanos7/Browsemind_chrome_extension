@@ -31,7 +31,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="w-100 p-4 bg-gray-800  text-white">
       <div className="w-full p-4 bg-gray-800 rounded-2xl text-white max-w-md mx-auto mt-10">
         <h1 className="text-2xl font-bold text-center mb-6">
           Register for BrowseMind
